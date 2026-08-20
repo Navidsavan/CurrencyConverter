@@ -10,13 +10,11 @@ import {
 } from 'lucide-react';
 
 interface HeaderProps {
-  onOpenSettings: () => void;
   onOpenRates: () => void;
   ratesSource: 'api' | 'fallback';
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  onOpenSettings,
   onOpenRates,
   ratesSource,
 }) => {
@@ -58,23 +56,11 @@ export const Header: React.FC<HeaderProps> = ({
             title="Explore Exchange Rates Table"
           >
             <TrendingUp className="w-4 h-4 text-blue-600" />
-            <span className="hidden md:inline">Live Rates</span>
-          </button>
-
-          {/* API Settings / Quota Modal */}
-          <button
-            type="button"
-            id="btn-header-settings"
-            onClick={onOpenSettings}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors min-h-[40px]"
-            title="API Status and Configuration"
-          >
-            <Settings className="w-4 h-4 text-slate-600" />
-            <span className="hidden sm:inline">API Config</span>
+            <span className="hidden sm:inline">Live Rates</span>
             {ratesSource === 'api' ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-500" title="API Online" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 ml-0.5" title="API Connected" />
             ) : (
-              <span className="w-2 h-2 rounded-full bg-amber-500" title="Fallback Mode" />
+              <span className="w-2 h-2 rounded-full bg-amber-500 ml-0.5" title="Fallback Mode" />
             )}
           </button>
         </div>

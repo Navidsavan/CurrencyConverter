@@ -5,7 +5,6 @@ import { Header } from '@/components/Header';
 import { ConverterCard } from '@/components/ConverterCard';
 import { ConversionHistory } from '@/components/ConversionHistory';
 import { RatesTableModal } from '@/components/RatesTableModal';
-import { ApiSettingsModal } from '@/components/ApiSettingsModal';
 import { useCurrencyConverter } from '@/hooks/use-currency-converter';
 import { useConversionHistory } from '@/hooks/use-conversion-history';
 import { ConversionHistoryItem, ConversionResult } from '@/lib/currency/currency.types';
@@ -20,7 +19,6 @@ import {
 
 export default function Home() {
   const [isRatesModalOpen, setIsRatesModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeMobileView, setActiveMobileView] = useState<'converter' | 'history'>('converter');
 
   const {
@@ -92,7 +90,6 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 pb-16 sm:pb-8">
       {/* Navigation Header */}
       <Header
-        onOpenSettings={() => setIsSettingsModalOpen(true)}
         onOpenRates={() => setIsRatesModalOpen(true)}
         ratesSource={ratesSource}
       />
@@ -268,15 +265,6 @@ export default function Home() {
         currencies={currencies}
         rates={latestRates}
         ratesSource={ratesSource}
-      />
-
-      {/* API Key Configuration Modal */}
-      <ApiSettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        customApiKey={customApiKey}
-        onSaveApiKey={saveCustomApiKey}
-        onRefreshCurrencies={refreshCurrencies}
       />
     </div>
   );
