@@ -1,15 +1,22 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { configureApp } from './app.setup';
 
+/**
+ * Standalone entry point: runs the API as its own service on its own port.
+ *
+ * The same AppModule is also mounted inside the Next.js server (see
+ * `pages/api/[...path].ts`), which is how a single Vercel deployment serves both
+ * the UI and this API. This file is what you run for backend development —
+ * `npm run start:dev` gives you hot reload — and for demoing the service on its own.
+ */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for frontend clients (React / Next.js).
-  // CORS_ORIGIN is a comma-separated allowlist, e.g.
-  //   CORS_ORIGIN=https://my-app.vercel.app,http://localhost:3000
-  // Unset means reflect any origin, which is convenient locally but should be
-  // pinned to the deployed frontend in production.
+  // CORS matters only for this standalone mode, where the browser calls a
+  // different origin than the one it loaded the page from. CORS_ORIGIN is a
+  // comma-separated allowlist; unset reflects any origin, which is fine locally
+  // but should be pinned to the deployed frontend in production.
   const allowedOrigins = process.env.CORS_ORIGIN?.split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
@@ -20,17 +27,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Global prefix for all API endpoints: /api/...
-  app.setGlobalPrefix('api');
-
-  // Request validation
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
+  configureApp(app);
 
   // Hosting providers assign the port; bind on all interfaces so the platform
   // health check can reach the container.

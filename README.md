@@ -22,6 +22,7 @@ A full-stack currency converter web application built with **React / Next.js**, 
 ├── app/                        # Frontend Application (Next.js 15 App Router & React)
 │   ├── page.tsx                # Main Converter page with tabs (Converter & History)
 │   └── layout.tsx              # Root HTML & Metadata layout
+├── pages/api/[...path].ts      # Mounts the NestJS app at /api (single-deployment mode)
 ├── components/                 # React UI Components
 │   ├── ConverterCard.tsx       # Main interactive conversion card (dropdowns, swap, presets)
 │   ├── CurrencySelect.tsx      # Searchable currency dropdown with quick-picks & flags
@@ -38,7 +39,8 @@ A full-stack currency converter web application built with **React / Next.js**, 
 │   └── currency.types.ts       # TypeScript interfaces
 ├── backend-nestjs/             # Standalone NestJS Backend Service
 │   ├── src/
-│   │   ├── main.ts             # NestJS entrypoint (CORS, global prefix `/api`, ValidationPipe)
+│   │   ├── main.ts             # Standalone entrypoint (own port, CORS)
+│   │   ├── app.setup.ts        # Prefix + ValidationPipe shared by both entrypoints
 │   │   ├── app.module.ts       # Root AppModule
 │   │   └── currency/           # NestJS Currency Module, Controller, Service & DTOs
 │   ├── package.json            # NestJS dependencies (@nestjs/core, @nestjs/common, etc.)
@@ -51,18 +53,34 @@ A full-stack currency converter web application built with **React / Next.js**, 
 
 ## ⚡ Quick Start Commands
 
-The NestJS service is the backend. The Next.js app is the client and holds no API
-credentials of its own, so **both processes must be running**.
+The NestJS application is mounted inside the Next.js server, so **one command runs
+everything**. The API is served from the same origin at `/api`.
 
-### 1. Start the NestJS backend
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000). The API is at
+[http://localhost:3000/api](http://localhost:3000/api) — try
+`curl http://localhost:3000/api/status`.
+
+`npm run dev` compiles the NestJS sources first (`npm run build:api`) and then starts
+Next.js.
+
+### Running the NestJS backend standalone
+
+The same `AppModule` also runs as its own service — useful for backend development,
+since it gives you hot reload, and for demonstrating the API independently of the UI:
 
 ```bash
 cd backend-nestjs
 npm install
-cp ../.env.example .env      # or supply your own FREECURRENCY_API_KEY
-npm run start:dev            # file-watching; use `npm run start` for a plain run
+npm run start:dev            # → http://localhost:4000/api
 ```
-The API listens on **`http://localhost:4000/api`**.
+
+To point the frontend at it instead of the embedded route, set
+`NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api` in `.env` and restart the dev server.
 
 #### Available NestJS scripts
 ```bash
@@ -72,52 +90,30 @@ npm run build         # Build production bundle to /dist
 npm run start:prod    # Start compiled production build
 ```
 
-### 2. Start the Next.js frontend
-
-In a second terminal, from the project root:
-
-```bash
-npm install
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000). The browser calls the NestJS
-service directly at the URL in `NEXT_PUBLIC_API_BASE_URL`; the FreeCurrencyAPI key
-stays on the NestJS side and is never sent to the client.
-
 ---
 
 ## 🚀 Deployment
 
-The frontend and the backend are **two separate deployments**. The frontend ships no
-credentials, so it needs a public URL for the backend to call.
-
-### 1. Deploy the NestJS backend
-
-Any Node host works (Render, Railway, Fly.io, a VM). Point it at the `backend-nestjs/`
-directory and configure:
+Deploy the repository to Vercel as a **single project**. No second host is required —
+the NestJS app ships inside the same deployment as a serverless function.
 
 | Setting | Value |
 | --- | --- |
-| Build command | `npm install && npm run build` |
-| Start command | `npm run start:prod` |
-| `FREECURRENCY_API_KEY` | your FreeCurrencyAPI key |
-| `CORS_ORIGIN` | your deployed frontend URL, e.g. `https://your-app.vercel.app` |
+| Framework preset | Next.js (detected automatically) |
+| Build command | `npm run build` (default — compiles NestJS, then Next.js) |
+| Environment variable | `FREECURRENCY_API_KEY` |
 
-The host supplies `PORT` itself. Verify with `curl https://your-backend.example.com/api/status`.
+That is the whole configuration. Do **not** set `NEXT_PUBLIC_API_BASE_URL`: the client
+defaults to the same-origin `/api`, which is correct on every device. Setting it to a
+`localhost` URL produces a build that works only on the machine running the backend and
+fails on phones and other computers.
 
-### 2. Deploy the frontend to Vercel
+### How it works
 
-Set **`NEXT_PUBLIC_API_BASE_URL`** to your backend's public URL including the `/api`
-prefix — for example `https://your-backend.onrender.com/api` — then **redeploy**.
-
-> **`NEXT_PUBLIC_*` variables are inlined at build time.** Setting the variable in the
-> Vercel dashboard does nothing to an already-built deployment; you must trigger a new
-> build for it to take effect.
-
-The backend URL must be **https**. A page served over https cannot call a plain `http://`
-address — browsers block it as mixed content — and `http://localhost` only ever resolves
-to the visitor's own device, so a build that falls back to localhost works on the
-developer's machine and fails on every other device.
+`pages/api/[...path].ts` bootstraps the NestJS `AppModule` behind an Express adapter and
+delegates every `/api/*` request to it — the same controller, service and DTO validation
+the standalone server uses. The Nest instance is cached between invocations, so only a
+cold start pays the bootstrap cost.
 
 ---
 
@@ -126,17 +122,18 @@ developer's machine and fails on every other device.
 Create a `.env` or `.env.local` file in the root directory (and/or in `backend-nestjs/`):
 
 ```env
-# FreeCurrencyAPI Access Key (backend only — never sent to the browser)
+# Required: FreeCurrencyAPI key. Backend only — never sent to the browser.
 FREECURRENCY_API_KEY=4E0VK7BnkdeUuh1vegAt808v2IUjzUR6lxcvBMT2
 
-# Where the browser reaches the NestJS backend (inlined at build time)
-NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api
+# Optional: only when pointing the client at a separately hosted backend.
+# Leave unset to use the same-origin /api route.
+# NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api
 
-# Comma-separated CORS allowlist; unset reflects any origin (dev only)
-# CORS_ORIGIN=https://your-app.vercel.app
-
-# Optional: NestJS port (default is 4000)
+# Optional: port for the standalone NestJS server (default 4000)
 PORT=4000
+
+# Optional: CORS allowlist for the standalone server
+# CORS_ORIGIN=https://your-app.vercel.app
 ```
 
 ---

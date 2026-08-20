@@ -9,25 +9,14 @@ import {
  *
  * The FreeCurrencyAPI key never leaves the server: this client only ever talks to
  * our own NestJS service, which holds the key and proxies the upstream calls.
+ *
+ * The default base is the relative '/api', because NestJS is mounted inside the
+ * Next.js server (see `pages/api/[...path].ts`) — same origin, no CORS, one
+ * deployment. Set NEXT_PUBLIC_API_BASE_URL to an absolute URL to point the client
+ * at a separately hosted backend instead, e.g. the standalone server on :4000.
  */
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ||
-  'http://localhost:4000/api';
-
-// NEXT_PUBLIC_* values are inlined at build time. A deployed build that fell back
-// to localhost will work on the developer's own machine and fail everywhere else,
-// so make that mistake visible rather than silent.
-if (
-  typeof window !== 'undefined' &&
-  !process.env.NEXT_PUBLIC_API_BASE_URL &&
-  window.location.hostname !== 'localhost' &&
-  window.location.hostname !== '127.0.0.1'
-) {
-  console.warn(
-    '[currency-converter] NEXT_PUBLIC_API_BASE_URL was not set at build time, so this ' +
-      'build points at http://localhost:4000/api. Set it in your hosting provider and redeploy.'
-  );
-}
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') || '/api';
 
 /** Shape returned by the backend for a single currency. */
 interface BackendCurrency {
@@ -42,11 +31,14 @@ interface BackendCurrency {
 }
 
 function buildUrl(path: string, params: Record<string, string | undefined> = {}) {
-  const url = new URL(`${API_BASE_URL}${path}`);
+  const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    if (value) url.searchParams.set(key, value);
+    if (value) query.set(key, value);
   });
-  return url.toString();
+  const suffix = query.toString();
+  // Built by concatenation rather than `new URL` so that a same-origin relative
+  // base ('/api') works as well as an absolute one.
+  return `${API_BASE_URL}${path}${suffix ? `?${suffix}` : ''}`;
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -59,7 +51,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     // backend not running, CORS blocked, or the device is offline.
     throw new Error(
       `Could not reach the currency API at ${API_BASE_URL}. ` +
-        'Check that the backend is running and that NEXT_PUBLIC_API_BASE_URL points at it.'
+        'Check your connection, or that the backend is running if you are pointing ' +
+        'NEXT_PUBLIC_API_BASE_URL at a separate server.'
     );
   }
 
