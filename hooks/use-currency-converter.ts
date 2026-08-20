@@ -259,7 +259,8 @@ export function useCurrencyConverter(
     };
   }, [fromCurrency, customApiKey]);
 
-  // Auto-convert on input change
+  // Live preview: re-quote the rate whenever an input changes, but never write
+  // to the history log. Records are only saved when the user explicitly converts.
   const isInitialRender = useRef(true);
   useEffect(() => {
     if (isInitialRender.current) {
@@ -269,7 +270,7 @@ export function useCurrencyConverter(
     }
 
     const timer = setTimeout(() => {
-      executeConversion(undefined, true);
+      executeConversion(undefined, false);
     }, 450);
 
     return () => clearTimeout(timer);
