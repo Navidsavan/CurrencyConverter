@@ -5,8 +5,11 @@ const common_1 = require("@nestjs/common");
 const app_module_1 = require("./app.module");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    const allowedOrigins = process.env.CORS_ORIGIN?.split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
     app.enableCors({
-        origin: true,
+        origin: allowedOrigins?.length ? allowedOrigins : true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
     });
@@ -17,7 +20,7 @@ async function bootstrap() {
         transformOptions: { enableImplicitConversion: true },
     }));
     const port = process.env.PORT || 4000;
-    await app.listen(port);
+    await app.listen(port, '0.0.0.0');
     console.log(`NestJS Currency Converter API is running on: http://localhost:${port}/api`);
 }
 bootstrap();

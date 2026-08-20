@@ -86,13 +86,54 @@ stays on the NestJS side and is never sent to the client.
 
 ---
 
+## 🚀 Deployment
+
+The frontend and the backend are **two separate deployments**. The frontend ships no
+credentials, so it needs a public URL for the backend to call.
+
+### 1. Deploy the NestJS backend
+
+Any Node host works (Render, Railway, Fly.io, a VM). Point it at the `backend-nestjs/`
+directory and configure:
+
+| Setting | Value |
+| --- | --- |
+| Build command | `npm install && npm run build` |
+| Start command | `npm run start:prod` |
+| `FREECURRENCY_API_KEY` | your FreeCurrencyAPI key |
+| `CORS_ORIGIN` | your deployed frontend URL, e.g. `https://your-app.vercel.app` |
+
+The host supplies `PORT` itself. Verify with `curl https://your-backend.example.com/api/status`.
+
+### 2. Deploy the frontend to Vercel
+
+Set **`NEXT_PUBLIC_API_BASE_URL`** to your backend's public URL including the `/api`
+prefix — for example `https://your-backend.onrender.com/api` — then **redeploy**.
+
+> **`NEXT_PUBLIC_*` variables are inlined at build time.** Setting the variable in the
+> Vercel dashboard does nothing to an already-built deployment; you must trigger a new
+> build for it to take effect.
+
+The backend URL must be **https**. A page served over https cannot call a plain `http://`
+address — browsers block it as mixed content — and `http://localhost` only ever resolves
+to the visitor's own device, so a build that falls back to localhost works on the
+developer's machine and fails on every other device.
+
+---
+
 ## 🛠️ Environment Configuration
 
 Create a `.env` or `.env.local` file in the root directory (and/or in `backend-nestjs/`):
 
 ```env
-# FreeCurrencyAPI Access Key
+# FreeCurrencyAPI Access Key (backend only — never sent to the browser)
 FREECURRENCY_API_KEY=4E0VK7BnkdeUuh1vegAt808v2IUjzUR6lxcvBMT2
+
+# Where the browser reaches the NestJS backend (inlined at build time)
+NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api
+
+# Comma-separated CORS allowlist; unset reflects any origin (dev only)
+# CORS_ORIGIN=https://your-app.vercel.app
 
 # Optional: NestJS port (default is 4000)
 PORT=4000
