@@ -1,0 +1,6 @@
+{
+  "name": "Currency Converter",
+  "description": "Dynamic currency converter with real-time and historical exchange rates, conversion history persistence, and backend API integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
