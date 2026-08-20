@@ -6,6 +6,11 @@ import {
   CurrencyInfo,
 } from '@/lib/currency/currency.types';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency/currency.constants';
+import {
+  convertCurrency,
+  fetchCurrencies as requestCurrencies,
+  fetchLatestRates,
+} from '@/lib/currency/api.client';
 
 const CUSTOM_API_KEY_STORAGE = 'freecurrency_custom_api_key';
 
@@ -97,13 +102,9 @@ export function useCurrencyConverter(
     setIsCurrenciesLoading(true);
     setError(null);
     try {
-      const url = customApiKey
-        ? `/api/currencies?apikey=${encodeURIComponent(customApiKey)}`
-        : '/api/currencies';
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success && data.data && Object.keys(data.data).length > 0) {
-        setCurrencies(data.data);
+      const { currencies: list } = await requestCurrencies(customApiKey);
+      if (Object.keys(list).length > 0) {
+        setCurrencies(list);
       }
     } catch (err) {
       console.error('Error fetching currencies:', err);
@@ -144,27 +145,14 @@ export function useCurrencyConverter(
       setError(null);
 
       try {
-        const response = await fetch('/api/convert', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(customApiKey ? { 'x-api-key': customApiKey } : {}),
-          },
-          body: JSON.stringify({
-            from: activeFrom,
-            to: activeTo,
-            amount: activeAmount,
-            date: activeDate,
-          }),
+        const convResult = await convertCurrency({
+          from: activeFrom,
+          to: activeTo,
+          amount: activeAmount,
+          date: activeDate,
+          customApiKey: customApiKey || undefined,
         });
 
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || 'Conversion failed. Please try again.');
-        }
-
-        const convResult: ConversionResult = data.data;
         setResult(convResult);
 
         if (recordToHistory && onConversionSuccess) {
@@ -194,17 +182,9 @@ export function useCurrencyConverter(
   // Fetch rates table for base currency
   const fetchRatesTable = useCallback(async () => {
     try {
-      const url = customApiKey
-        ? `/api/rates/latest?base=${fromCurrency}&apikey=${encodeURIComponent(
-            customApiKey
-          )}`
-        : `/api/rates/latest?base=${fromCurrency}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success && data.rates) {
-        setLatestRates(data.rates);
-        setRatesSource(data.source || 'api');
-      }
+      const { rates, source } = await fetchLatestRates(fromCurrency, customApiKey);
+      setLatestRates(rates);
+      setRatesSource(source || 'api');
     } catch (e) {
       console.warn('Failed to load rates table', e);
     }
@@ -215,16 +195,12 @@ export function useCurrencyConverter(
     let isMounted = true;
     async function init() {
       try {
-        const url = customApiKey
-          ? `/api/currencies?apikey=${encodeURIComponent(customApiKey)}`
-          : '/api/currencies';
-        const res = await fetch(url);
-        const data = await res.json();
-        if (isMounted && data.success && data.data && Object.keys(data.data).length > 0) {
-          setCurrencies(data.data);
+        const { currencies: list } = await requestCurrencies(customApiKey);
+        if (isMounted && Object.keys(list).length > 0) {
+          setCurrencies(list);
         }
       } catch {
-        // fallback active
+        // keep the bundled currency list so the dropdowns still work
       }
     }
     init();
@@ -238,19 +214,13 @@ export function useCurrencyConverter(
     let isMounted = true;
     async function loadRates() {
       try {
-        const url = customApiKey
-          ? `/api/rates/latest?base=${fromCurrency}&apikey=${encodeURIComponent(
-              customApiKey
-            )}`
-          : `/api/rates/latest?base=${fromCurrency}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (isMounted && data.success && data.rates) {
-          setLatestRates(data.rates);
-          setRatesSource(data.source || 'api');
+        const { rates, source } = await fetchLatestRates(fromCurrency, customApiKey);
+        if (isMounted) {
+          setLatestRates(rates);
+          setRatesSource(source || 'api');
         }
       } catch {
-        // ignore
+        // ignore — the converter still works without the rates table
       }
     }
     loadRates();

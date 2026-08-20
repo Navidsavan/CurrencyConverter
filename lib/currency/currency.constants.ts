@@ -1,9 +1,5 @@
 import { CurrencyInfo } from './currency.types';
 
-export const DEFAULT_API_KEY =
-  process.env.FREECURRENCY_API_KEY || '4E0VK7BnkdeUuh1vegAt808v2IUjzUR6lxcvBMT2';
-
-export const FREECURRENCY_BASE_URL = 'https://api.freecurrencyapi.com/v1';
 
 // Comprehensive metadata for FreeCurrencyAPI supported currencies with flags & symbols
 export const SUPPORTED_CURRENCIES: Record<string, CurrencyInfo> = {
@@ -370,41 +366,4 @@ export const SUPPORTED_CURRENCIES: Record<string, CurrencyInfo> = {
     countries: ['Egypt'],
     flag: '🇪🇬',
   },
-};
-
-// Fallback baseline exchange rates relative to USD (used only if FreeCurrencyAPI quota is exceeded)
-export const FALLBACK_USD_RATES: Record<string, number> = {
-  USD: 1.0,
-  EUR: 0.9235,
-  GBP: 0.7891,
-  JPY: 154.65,
-  AUD: 1.524,
-  CAD: 1.368,
-  CHF: 0.897,
-  CNY: 7.235,
-  INR: 83.45,
-  SGD: 1.348,
-  HKD: 7.821,
-  NZD: 1.642,
-  SEK: 10.62,
-  KRW: 1375.5,
-  BRL: 5.185,
-  MXN: 16.92,
-  NOK: 10.85,
-  TRY: 32.45,
-  RUB: 91.5,
-  ZAR: 18.75,
-  PLN: 3.98,
-  ILS: 3.72,
-  DKK: 6.89,
-  CZK: 23.25,
-  HUF: 362.4,
-  IDR: 16240.0,
-  MYR: 4.72,
-  PHP: 57.85,
-  THB: 36.75,
-  AED: 3.6725,
-  SAR: 3.75,
-  PKR: 278.4,
-  EGP: 47.9,
 };

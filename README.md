@@ -21,24 +21,20 @@ A full-stack currency converter web application built with **React / Next.js**, 
 ```
 ├── app/                        # Frontend Application (Next.js 15 App Router & React)
 │   ├── page.tsx                # Main Converter page with tabs (Converter & History)
-│   ├── layout.tsx              # Root HTML & Metadata layout
-│   └── api/                    # Built-in Server API Routes (Next.js serverless proxy)
-│       ├── convert/route.ts    # POST /api/convert
-│       ├── currencies/route.ts # GET /api/currencies
-│       ├── rates/              # GET /api/rates/latest & /api/rates/historical
-│       └── status/route.ts     # GET /api/status
+│   └── layout.tsx              # Root HTML & Metadata layout
 ├── components/                 # React UI Components
 │   ├── ConverterCard.tsx       # Main interactive conversion card (dropdowns, swap, presets)
-│   ├── CurrencySelectModal.tsx # Searchable currency modal with quick-picks & flags
-│   ├── HistoryList.tsx         # Conversion history table/cards with search, filter, CSV/JSON export
-│   └── ApiKeyModal.tsx         # API key manager & status viewer
+│   ├── CurrencySelect.tsx      # Searchable currency dropdown with quick-picks & flags
+│   ├── ConversionHistory.tsx   # Conversion history with search, filter, CSV/JSON export
+│   ├── RatesTableModal.tsx     # Browse every rate for the current base currency
+│   └── Header.tsx              # Title bar with live/fallback rate-source badge
 ├── hooks/                      # Custom React Hooks
 │   ├── use-currency-converter.ts # Core currency conversion & rate state management
 │   ├── use-conversion-history.ts # Persistent localStorage history (useSyncExternalStore)
 │   └── use-mobile.ts           # Responsive screen breakpoint detector
-├── lib/currency/               # Currency domain models, types, constants & services
-│   ├── currency.service.ts     # Currency fetch & calculation logic
-│   ├── currency.constants.ts   # Supported currencies, fallback rate matrix
+├── lib/currency/               # Client-side domain layer
+│   ├── api.client.ts           # Typed client for the NestJS backend
+│   ├── currency.constants.ts   # Currency display metadata (flags, symbols, countries)
 │   └── currency.types.ts       # TypeScript interfaces
 ├── backend-nestjs/             # Standalone NestJS Backend Service
 │   ├── src/
@@ -55,47 +51,38 @@ A full-stack currency converter web application built with **React / Next.js**, 
 
 ## ⚡ Quick Start Commands
 
-### Option A: Run the React / Next.js Full-Stack App (Zero-Config)
+The NestJS service is the backend. The Next.js app is the client and holds no API
+credentials of its own, so **both processes must be running**.
 
-The frontend project includes built-in API proxy routes, allowing instant execution without requiring separate processes:
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Start the development server
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-### Option B: Run the Standalone NestJS Backend
-
-To run the dedicated NestJS microservice backend:
+### 1. Start the NestJS backend
 
 ```bash
-# 1. Navigate to the NestJS backend directory
 cd backend-nestjs
-
-# 2. Install dependencies
 npm install
-
-# 3. Create environment file
-cp .env.example .env
-
-# 4. Start NestJS in development mode (with hot-reload)
-npm run start:dev
+cp ../.env.example .env      # or supply your own FREECURRENCY_API_KEY
+npm run start:dev            # file-watching; use `npm run start` for a plain run
 ```
-The NestJS API server will run at: **`http://localhost:4000/api`**
+The API listens on **`http://localhost:4000/api`**.
 
-#### Available NestJS Scripts:
+#### Available NestJS scripts
 ```bash
 npm run start         # Start standard NestJS server
 npm run start:dev     # Start with file-watching & hot-reload
 npm run build         # Build production bundle to /dist
 npm run start:prod    # Start compiled production build
 ```
+
+### 2. Start the Next.js frontend
+
+In a second terminal, from the project root:
+
+```bash
+npm install
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000). The browser calls the NestJS
+service directly at the URL in `NEXT_PUBLIC_API_BASE_URL`; the FreeCurrencyAPI key
+stays on the NestJS side and is never sent to the client.
 
 ---
 
