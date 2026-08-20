@@ -48,7 +48,7 @@ A full-stack currency converter web application built with **React / Next.js**, 
 │   ├── package.json            # NestJS dependencies (@nestjs/core, @nestjs/common, etc.)
 │   ├── tsconfig.json           # NestJS TypeScript configuration
 │   └── README.md               # Dedicated NestJS documentation
-└── package.json                # Frontend / Applet configuration
+└── package.json                # Frontend project configuration
 ```
 
 ---
